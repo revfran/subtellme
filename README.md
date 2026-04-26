@@ -7,7 +7,7 @@ with spoiler-aware answers.
 ## What it does
 
 1. You point it at a title and (optionally) a season and language.
-2. It scrapes subtitles from one of several public sources.
+2. It downloads subtitles from OpenSubtitles.com.
 3. It parses the SRTs into clean text per episode.
 4. It generates `plot.md` with sections marked as spoiler-free vs spoiler.
 5. It replies with a 2-paragraph spoiler-free summary, then answers questions
@@ -48,16 +48,8 @@ The skill will download under `.claude/skills/subtellme/data/<slug>/...`
 
 ## Sources
 
-Subtitle sources, tried in order:
-
-| Type    | English              | Spanish / Other      |
-|---------|----------------------|----------------------|
-| Movie   | YIFY → OpenSubtitles | OpenSubtitles        |
-| Series  | OpenSubtitles        | OpenSubtitles        |
-
-**OpenSubtitles.com** is the primary source and requires an API key (see
-Install). The free tier allows 5 downloads per day. YIFY Subtitles is used
-as a first attempt for English movies (no API key needed).
+**OpenSubtitles.com** is the sole subtitle source. It requires an API key
+(see Install). The free tier allows 5 downloads per day.
 
 Each source is a single file under `scripts/sources/` implementing `Source`
 with `search()` and `download()` methods.
@@ -65,8 +57,7 @@ with `search()` and `download()` methods.
 ## Caveats
 
 - **Personal use only.** Respect OpenSubtitles.com's terms of service. The
-  free tier is limited to 5 downloads/day. YIFY scraping includes
-  conservative rate limits (1 req/s).
+  free tier is limited to 5 downloads/day.
 - The skill caps series at one season per invocation by design.
 - Subtitle quality varies. If the parser produces garbled text, try another
   language or run again to retry the next source in the chain.

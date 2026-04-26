@@ -40,8 +40,8 @@ ask **one** clarifying question before downloading.
    python .claude/skills/subtellme/scripts/fetch_subs.py \
      --title "<title>" [--year YYYY] [--season N] --lang <en|es>
    ```
-   It tries the source chain (YIFY/Addic7ed → Subdivx → Podnapisi) and
-   writes raw `.srt` files under `raw/`.
+   It downloads from OpenSubtitles.com and writes raw `.srt` files
+   under `raw/`.
 4. Parse them:
    ```
    python .claude/skills/subtellme/scripts/parse_srt.py \

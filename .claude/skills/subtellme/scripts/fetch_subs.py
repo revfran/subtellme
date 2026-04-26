@@ -5,10 +5,7 @@ CLI:
     python fetch_subs.py --title "Breaking Bad" --season 1 --lang en
     python fetch_subs.py --title "Dune" --year 2021 --lang es
 
-Source chain (first hit wins):
-    movie  + en  → yify → opensubtitles
-    movie  + es  → opensubtitles
-    series + any → opensubtitles
+Source: OpenSubtitles.com API (requires API key in .env).
 
 The raw `.srt` files land in:
     .claude/skills/subtellme/data/<slug>/<S0X|movie>/<lang>/raw/
@@ -53,7 +50,6 @@ from sources import (  # noqa: E402
     OpenSubtitles,
     Source,
     SourceError,
-    YifySubtitles,
 )
 from sources.base import best_match  # noqa: E402
 
@@ -76,13 +72,7 @@ def resolve_target_dir(title: str, season: int | None, lang: str) -> Path:
 
 
 def chain_for(kind: str, lang: str) -> list[Source]:
-    ost = OpenSubtitles()
-    if kind == "movie" and lang == "en":
-        return [YifySubtitles(), ost]
-    if kind == "movie":
-        return [ost]
-    # series — any language
-    return [ost]
+    return [OpenSubtitles()]
 
 
 def fetch_movie(source: Source, title: str, year: int | None, lang: str,
