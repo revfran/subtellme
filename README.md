@@ -25,11 +25,15 @@ Python 3.10+ is required. Install dependencies once:
 pip install -r .claude/skills/subtellme/requirements.txt
 ```
 
-To extract `.rar` archives (Subdivx and a few others), the system needs the
-`unrar` binary on `PATH`:
+Copy `.env.example` to `.env` and fill in your OpenSubtitles.com credentials:
 
-- macOS: `brew install unar` (provides `unrar`)
-- Debian/Ubuntu: `sudo apt install unrar`
+```
+cp .env.example .env
+# Then edit .env with your API key, username, and password
+```
+
+Get an API key at https://www.opensubtitles.com/en/consumers (free tier
+allows 5 subtitle downloads per day).
 
 ## Usage
 
@@ -44,23 +48,25 @@ The skill will download under `.claude/skills/subtellme/data/<slug>/...`
 
 ## Sources
 
-MVP scrapers, tried in order per language:
+Subtitle sources, tried in order:
 
-| Type    | English (default 1)        | Spanish (default 2) | Fallback         |
-|---------|----------------------------|---------------------|------------------|
-| Movie   | YIFY Subtitles             | Subdivx             | Podnapisi        |
-| Series  | Addic7ed                   | Subdivx             | Podnapisi        |
+| Type    | English              | Spanish / Other      |
+|---------|----------------------|----------------------|
+| Movie   | YIFY → OpenSubtitles | OpenSubtitles        |
+| Series  | OpenSubtitles        | OpenSubtitles        |
 
-Public sites change their HTML often. If a scraper breaks, the relevant file
-under `scripts/sources/` is the only place that needs to be updated. Each
-source has a single `search()` and `download()` function and a comment block
-documenting the URLs and selectors it depends on.
+**OpenSubtitles.com** is the primary source and requires an API key (see
+Install). The free tier allows 5 downloads per day. YIFY Subtitles is used
+as a first attempt for English movies (no API key needed).
+
+Each source is a single file under `scripts/sources/` implementing `Source`
+with `search()` and `download()` methods.
 
 ## Caveats
 
-- **Personal use only.** Respect each site's terms of service. The scrapers
-  include conservative rate limits (1 req/s per host) and a realistic
-  User-Agent.
+- **Personal use only.** Respect OpenSubtitles.com's terms of service. The
+  free tier is limited to 5 downloads/day. YIFY scraping includes
+  conservative rate limits (1 req/s).
 - The skill caps series at one season per invocation by design.
 - Subtitle quality varies. If the parser produces garbled text, try another
   language or run again to retry the next source in the chain.

@@ -32,6 +32,21 @@
 - {{THEME_2}}
 - ...
 
+## Momentos épicos que no te puedes perder (sin spoilers)
+
+<!--
+  3–6 bullet points. Highlight the most thrilling, funny, or emotionally
+  charged scenes of the season/movie. Each names an episode number and
+  gives a vivid one-line teaser that sells the moment WITHOUT revealing
+  the outcome or any twist. Focus on the spectacle, the tension, or the
+  emotion—not on what happens next.
+  Example: "Episode 08 — a shell game with a giant and the stakes are
+  everything."
+-->
+
+- {{MOMENT_1}}
+- ...
+
 <!-- SPOILERS BELOW -->
 
 ## Trama detallada (con spoilers)

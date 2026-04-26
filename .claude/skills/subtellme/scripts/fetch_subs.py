@@ -6,10 +6,9 @@ CLI:
     python fetch_subs.py --title "Dune" --year 2021 --lang es
 
 Source chain (first hit wins):
-    movie  + en  → yify     → podnapisi
-    movie  + es  → subdivx  → podnapisi
-    series + en  → addic7ed → podnapisi
-    series + es  → subdivx  → podnapisi
+    movie  + en  → yify → opensubtitles
+    movie  + es  → opensubtitles
+    series + any → opensubtitles
 
 The raw `.srt` files land in:
     .claude/skills/subtellme/data/<slug>/<S0X|movie>/<lang>/raw/
@@ -21,22 +20,39 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import re
 import shutil
 import sys
 import unicodedata
 from pathlib import Path
 
+
+def _load_dotenv() -> None:
+    """Load .env from the repo root (4 levels up from this script)."""
+    env_file = Path(__file__).resolve().parents[4] / ".env"
+    if not env_file.is_file():
+        return
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip()
+        if key and value and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv()
+
 # Local import so this script runs from any cwd via `python fetch_subs.py`.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from sources import (  # noqa: E402
-    Addic7ed,
     Match,
-    Podnapisi,
+    OpenSubtitles,
     Source,
     SourceError,
-    Subdivx,
     YifySubtitles,
 )
 from sources.base import best_match  # noqa: E402
@@ -60,15 +76,13 @@ def resolve_target_dir(title: str, season: int | None, lang: str) -> Path:
 
 
 def chain_for(kind: str, lang: str) -> list[Source]:
+    ost = OpenSubtitles()
     if kind == "movie" and lang == "en":
-        return [YifySubtitles(), Podnapisi()]
-    if kind == "movie" and lang == "es":
-        return [Subdivx(), Podnapisi()]
-    if kind == "series" and lang == "en":
-        return [Addic7ed(), Podnapisi()]
-    if kind == "series" and lang == "es":
-        return [Subdivx(), Podnapisi()]
-    return [Podnapisi()]
+        return [YifySubtitles(), ost]
+    if kind == "movie":
+        return [ost]
+    # series — any language
+    return [ost]
 
 
 def fetch_movie(source: Source, title: str, year: int | None, lang: str,
@@ -87,24 +101,35 @@ def fetch_series(source: Source, title: str, season: int, lang: str,
     if not matches:
         raise SourceError(f"{source.name}: no episodes for '{title}' S{season:02d}")
 
-    if source.name == "addic7ed":
-        # One Match per episode; download each.
-        out: list[Path] = []
-        for m in matches:
-            try:
-                out.extend(source.download(m, raw_dir))
-            except SourceError as e:
-                log.warning("addic7ed: episode %s skipped (%s)", m.extra.get("episode"), e)
-        if not out:
-            raise SourceError("addic7ed: no episodes downloaded")
-        return out
+    # Group by episode; download the best match per episode.
+    by_episode: dict[int, list[Match]] = {}
+    for m in matches:
+        ep = m.extra.get("episode", 0)
+        by_episode.setdefault(ep, []).append(m)
 
-    # Subdivx/Podnapisi: typically a single archive containing the whole season.
-    pick = best_match(matches, title)
-    if not pick:
-        raise SourceError(f"{source.name}: ranking returned no candidate")
-    log.info("[%s] best match: %s (score=%.1f)", source.name, pick.title, pick.score)
-    return source.download(pick, raw_dir)
+    if by_episode and all(ep == 0 for ep in by_episode):
+        # No episode info — just download the top match.
+        pick = best_match(matches, title)
+        if not pick:
+            raise SourceError(f"{source.name}: ranking returned no candidate")
+        log.info("[%s] best match: %s (score=%.1f)", source.name, pick.title, pick.score)
+        return source.download(pick, raw_dir)
+
+    # Download per episode.
+    out: list[Path] = []
+    for ep in sorted(by_episode):
+        if ep == 0:
+            continue
+        pick = best_match(by_episode[ep], title)
+        if not pick:
+            continue
+        try:
+            out.extend(source.download(pick, raw_dir))
+        except SourceError as e:
+            log.warning("%s: episode %d skipped (%s)", source.name, ep, e)
+    if not out:
+        raise SourceError(f"{source.name}: no episodes downloaded")
+    return out
 
 
 def run(title: str, season: int | None, year: int | None, lang: str,
