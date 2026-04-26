@@ -1,0 +1,28 @@
+# Subtitle data and caches (copyright, large, ephemeral)
+.claude/skills/subtellme/data/
+*.srt
+*.sub
+*.ass
+*.ssa
+*.zip
+*.rar
+
+# Local config / secrets
+.env
+.env.*
+!.env.example
+*settings.local.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
